@@ -5,222 +5,241 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Greek Numbers</title>
   <style>
-    body {
-      margin: 0;
-      font-family: -apple-system, system-ui;
-      background: #0b1220;
-      color: #e8eefc;
-      text-align: center;
-      padding: 16px;
+    body{
+      margin:0;
+      font-family:-apple-system,system-ui;
+      background:#0b1220;
+      color:#e8eefc;
+      text-align:center;
+      padding:16px;
     }
-    h1 { font-size: 20px; margin: 10px 0 4px; }
-    #num { font-size: 56px; font-weight: 900; margin: 18px 0 10px; }
-    .hint { opacity: 0.85; margin-bottom: 12px; }
-    #choices { display: grid; gap: 12px; margin-top: 12px; }
-    button.choice {
-      width: 100%;
-      padding: 16px;
-      font-size: 22px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: #121c33;
-      color: #e8eefc;
-      font-weight: 800;
+    h1{font-size:20px;margin:10px 0 4px;}
+    #num{font-size:56px;font-weight:900;margin:18px 0 10px;}
+    .hint{opacity:0.85;margin-bottom:12px;}
+
+    .topRow{display:grid;gap:10px;margin-top:10px;}
+
+    select{
+      width:100%;
+      padding:14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.2);
+      background:#121c33;
+      color:#e8eefc;
+      font-size:16px;
+      font-weight:800;
     }
-    button.choice.good {
-      background: rgba(96,255,165,0.18);
-      border-color: rgba(96,255,165,0.55);
+
+    .pill{
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);
+      font-weight:800;
+      display:inline-block;
     }
-    button.choice.bad {
-      background: rgba(255,96,96,0.18);
-      border-color: rgba(255,96,96,0.55);
+
+    .topBtn{
+      width:100%;
+      padding:14px;
+      font-size:18px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.2);
+      background:rgba(255,255,255,0.06);
+      color:#e8eefc;
+      font-weight:800;
     }
-    .topBtn {
-      width: 100%;
-      padding: 14px;
-      font-size: 18px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.06);
-      color: #e8eefc;
-      font-weight: 800;
-      margin-top: 10px;
+
+    #choices{display:grid;gap:12px;margin-top:12px;}
+
+    button.choice{
+      width:100%;
+      padding:16px;
+      font-size:22px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.2);
+      background:#121c33;
+      color:#e8eefc;
+      font-weight:800;
     }
-    #status {
-      margin-top: 12px;
-      min-height: 22px;
-      font-size: 18px;
-      font-weight: 800;
+    button.choice.good{
+      background:rgba(96,255,165,0.18);
+      border-color:rgba(96,255,165,0.55);
     }
-    .scoreRow {
-      margin-top: 12px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      font-size: 16px;
-      opacity: 0.95;
+    button.choice.bad{
+      background:rgba(255,96,96,0.18);
+      border-color:rgba(255,96,96,0.55);
     }
-    .pill {
-      padding: 10px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06);
-      font-weight: 800;
+
+    #status{
+      margin-top:12px;
+      min-height:22px;
+      font-size:18px;
+      font-weight:900;
     }
-    .flag {
-      position: fixed;
-      right: 12px;
-      bottom: 12px;
-      font-size: 26px;
-      opacity: 0.95;
-      user-select: none;
+
+    .flag{
+      position:fixed;
+      right:12px;
+      bottom:12px;
+      font-size:26px;
+      opacity:0.95;
+      user-select:none;
     }
   </style>
 </head>
 <body>
 
-<h1>Greek Numbers 0 έως 9999</h1>
+<h1>Greek Numbers</h1>
 <div id="num">–</div>
 <div class="hint">Πάτα το σωστό στα Ελληνικά</div>
 
-<button class="topBtn" onclick="sayAnswer()">🔊 Άκουσε την απάντηση</button>
+<div class="topRow">
+  <button class="topBtn" onclick="showLevelSelect()">🔙 Change level</button>
+
+  <select id="level" onchange="startGame()">
+    <option value="20">Level: 0 έως 20</option>
+    <option value="100">Level: 0 έως 100</option>
+    <option value="9999" selected>Level: 0 έως 9999</option>
+  </select>
+
+  <button class="topBtn" onclick="sayAnswer()">🔊 Άκουσε την απάντηση</button>
+
+  <div class="pill">Σωστά: <span id="correctCount">0</span></div>
+</div>
 
 <div id="choices"></div>
 <div id="status"></div>
 
-<div class="scoreRow">
-  <div class="pill">Σωστά: <span id="correctCount">0</span></div>
-  <div class="pill">Σειρά: <span id="streakCount">0</span></div>
-</div>
-
 <div class="flag">🇬🇷</div>
 
 <script>
+/* ------- Feedback phrases ------- */
 const praise = ["Μπράβο", "Τέλεια", "Σωστό", "Πολύ καλά"];
 const tryAgain = "Δοκίμασε ξανά";
 
+/* ------- Game state ------- */
 let current = 0;
 let correctTotal = 0;
-let streak = 0;
+let maxRange = 9999;
+let locked = false;
 
+/* ------- Voice ------- */
 let greekVoice = null;
 
+/* ------- Tiny sound effects (no external files) ------- */
+let audioCtx = null;
+function ctx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(freq, ms, type="sine", vol=0.08){
+  const c = ctx();
+  const o = c.createOscillator();
+  const g = c.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.value = vol;
+  o.connect(g); g.connect(c.destination);
+  o.start();
+  setTimeout(()=>{ o.stop(); }, ms);
+}
+function wrongBuzzer(){
+  beep(180,120,"square",0.09);
+  setTimeout(()=>beep(140,180,"square",0.09),130);
+}
+function rightChime(){
+  beep(660,90,"sine",0.06);
+  setTimeout(()=>beep(880,120,"sine",0.06),110);
+  setTimeout(()=>beep(990,140,"sine",0.06),250);
+}
+
+/* ------- Number words ------- */
 const units = {
-  0: "μηδέν",
-  1: "ένα",
-  2: "δύο",
-  3: "τρία",
-  4: "τέσσερα",
-  5: "πέντε",
-  6: "έξι",
-  7: "επτά",
-  8: "οκτώ",
-  9: "εννέα"
+  0:"μηδέν",1:"ένα",2:"δύο",3:"τρία",4:"τέσσερα",5:"πέντε",
+  6:"έξι",7:"επτά",8:"οκτώ",9:"εννέα"
 };
-
 const teens = {
-  10: "δέκα",
-  11: "έντεκα",
-  12: "δώδεκα",
-  13: "δεκατρία",
-  14: "δεκατέσσερα",
-  15: "δεκαπέντε",
-  16: "δεκαέξι",
-  17: "δεκαεπτά",
-  18: "δεκαοκτώ",
-  19: "δεκαεννέα"
+  10:"δέκα",11:"έντεκα",12:"δώδεκα",13:"δεκατρία",14:"δεκατέσσερα",
+  15:"δεκαπέντε",16:"δεκαέξι",17:"δεκαεπτά",18:"δεκαοκτώ",19:"δεκαεννέα"
 };
-
 const tens = {
-  20: "είκοσι",
-  30: "τριάντα",
-  40: "σαράντα",
-  50: "πενήντα",
-  60: "εξήντα",
-  70: "εβδομήντα",
-  80: "ογδόντα",
-  90: "ενενήντα"
+  20:"είκοσι",30:"τριάντα",40:"σαράντα",50:"πενήντα",60:"εξήντα",
+  70:"εβδομήντα",80:"ογδόντα",90:"ενενήντα"
 };
-
 const hundreds = {
-  2: "διακόσια",
-  3: "τριακόσια",
-  4: "τετρακόσια",
-  5: "πεντακόσια",
-  6: "εξακόσια",
-  7: "επτακόσια",
-  8: "οκτακόσια",
-  9: "εννιακόσια"
+  2:"διακόσια",3:"τριακόσια",4:"τετρακόσια",5:"πεντακόσια",6:"εξακόσια",
+  7:"επτακόσια",8:"οκτακόσια",9:"εννιακόσια"
 };
 
-function under100(n) {
-  if (n < 10) return units[n];
-  if (n < 20) return teens[n];
-  if (n % 10 === 0) return tens[n];
-  const t = Math.floor(n / 10) * 10;
-  const r = n % 10;
+function under100(n){
+  if(n<10) return units[n];
+  if(n<20) return teens[n];
+  if(n%10===0) return tens[n];
+  const t = Math.floor(n/10)*10;
+  const r = n%10;
   return tens[t] + " " + units[r];
 }
 
-function under1000(n) {
-  if (n < 100) return under100(n);
+function under1000(n){
+  if(n<100) return under100(n);
+  const h = Math.floor(n/100);
+  const r = n%100;
 
-  const h = Math.floor(n / 100);
-  const r = n % 100;
-
-  if (h === 1) {
-    if (r === 0) return "εκατό";
+  if(h===1){
+    if(r===0) return "εκατό";
     return "εκατόν " + under100(r);
   }
 
   const hWord = hundreds[h];
-  if (r === 0) return hWord;
+  if(r===0) return hWord;
   return hWord + " " + under100(r);
 }
 
-function thousandsPrefix(t) {
-  if (t === 2) return "δύο";
-  if (t === 3) return "τρεις";
-  if (t === 4) return "τέσσερις";
-  if (t === 5) return "πέντε";
-  if (t === 6) return "έξι";
-  if (t === 7) return "επτά";
-  if (t === 8) return "οκτώ";
-  if (t === 9) return "εννέα";
+function thousandsPrefix(t){
+  if(t===2) return "δύο";
+  if(t===3) return "τρεις";
+  if(t===4) return "τέσσερις";
+  if(t===5) return "πέντε";
+  if(t===6) return "έξι";
+  if(t===7) return "επτά";
+  if(t===8) return "οκτώ";
+  if(t===9) return "εννέα";
   return "";
 }
 
-function numberToGreek(n) {
-  if (n === 0) return units[0];
-  if (n < 1000) return under1000(n);
+function numberToGreek(n){
+  if(n===0) return units[0];
+  if(n<1000) return under1000(n);
 
-  const t = Math.floor(n / 1000);
-  const r = n % 1000;
+  const t = Math.floor(n/1000);
+  const r = n%1000;
 
   let left = "";
-  if (t === 1) {
+  if(t===1){
     left = "χίλια";
   } else {
     left = thousandsPrefix(t) + " χιλιάδες";
   }
 
-  if (r === 0) return left;
+  if(r===0) return left;
   return left + " " + under1000(r);
 }
 
-function loadGreekVoice() {
+/* ------- Voice helpers ------- */
+function loadGreekVoice(){
   const voices = speechSynthesis.getVoices();
   greekVoice =
-    voices.find(v => (v.lang || "").toLowerCase() === "el-gr") ||
-    voices.find(v => (v.lang || "").toLowerCase().startsWith("el")) ||
+    voices.find(v => (v.lang||"").toLowerCase()==="el-gr") ||
+    voices.find(v => (v.lang||"").toLowerCase().startsWith("el")) ||
     null;
 }
 speechSynthesis.onvoiceschanged = loadGreekVoice;
 loadGreekVoice();
 
-function speak(text) {
+function speak(text){
   const u = new SpeechSynthesisUtterance(text);
-  if (greekVoice) u.voice = greekVoice;
+  if(greekVoice) u.voice = greekVoice;
   u.lang = "el-GR";
   u.rate = 0.9;
   u.pitch = 1.0;
@@ -228,26 +247,53 @@ function speak(text) {
   speechSynthesis.speak(u);
 }
 
-function sayAnswer() {
+function waitForSpeechEnd(text){
+  return new Promise(resolve=>{
+    const u = new SpeechSynthesisUtterance(text);
+    if(greekVoice) u.voice = greekVoice;
+    u.lang = "el-GR";
+    u.rate = 0.9;
+    u.pitch = 1.0;
+    u.onend = resolve;
+    u.onerror = resolve;
+    speechSynthesis.speak(u);
+  });
+}
+
+/* ------- UI actions ------- */
+function sayAnswer(){
   speak(numberToGreek(current));
 }
 
-function renderChoices() {
+function startGame(){
+  maxRange = Number(document.getElementById("level").value);
+  correctTotal = 0;
+  document.getElementById("correctCount").innerText = "0";
+  document.getElementById("level").style.display = "none";
+  document.getElementById("status").innerText = "";
+  pickNew();
+}
+
+function showLevelSelect(){
+  document.getElementById("level").style.display = "block";
+  document.getElementById("status").innerText = "Διάλεξε επίπεδο";
+}
+
+/* ------- Game flow ------- */
+function renderChoices(){
   const box = document.getElementById("choices");
   box.innerHTML = "";
-
   const correct = numberToGreek(current);
 
   let options = [correct];
-  while (options.length < 3) {
-    const rNum = Math.floor(Math.random() * 10000);
+  while(options.length<3){
+    const rNum = Math.floor(Math.random()*(maxRange+1));
     const rText = numberToGreek(rNum);
-    if (!options.includes(rText)) options.push(rText);
+    if(!options.includes(rText)) options.push(rText);
   }
+  options.sort(()=>Math.random()-0.5);
 
-  options.sort(() => Math.random() - 0.5);
-
-  options.forEach(text => {
+  options.forEach(text=>{
     const b = document.createElement("button");
     b.className = "choice";
     b.innerText = text;
@@ -256,42 +302,56 @@ function renderChoices() {
   });
 }
 
-function pickNew() {
-  current = Math.floor(Math.random() * 10000);
+function pickNew(){
+  locked = false;
+  current = Math.floor(Math.random()*(maxRange+1));
   document.getElementById("num").innerText = current;
   document.getElementById("status").innerText = "";
   renderChoices();
 }
 
-function handleChoice(btn, chosen) {
+async function handleChoice(btn, chosen){
+  if(locked) return;
+
   const correct = numberToGreek(current);
 
-  if (chosen === correct) {
+  if(chosen === correct){
+    locked = true;
+
     btn.classList.add("good");
 
     correctTotal += 1;
-    streak += 1;
-    document.getElementById("correctCount").innerText = correctTotal;
-    document.getElementById("streakCount").innerText = streak;
+    document.getElementById("correctCount").innerText = String(correctTotal);
 
-    const msg = praise[Math.floor(Math.random() * praise.length)];
+    const msg = praise[Math.floor(Math.random()*praise.length)];
     document.getElementById("status").innerText = "✅ " + msg;
 
-    speak(correct);
-    setTimeout(() => speak(msg), 900);
+    // Sound + speech sequence: chime → number (finish) → chime → praise
+    rightChime();
 
+    speechSynthesis.cancel();
+    await waitForSpeechEnd(correct);
+
+    rightChime();
+    await waitForSpeechEnd(msg);
+
+    // lock buttons and move on
     document.querySelectorAll("button.choice").forEach(b => b.disabled = true);
-    setTimeout(pickNew, 1400);
+    setTimeout(pickNew, 300);
   } else {
     btn.classList.add("bad");
-    streak = 0;
-    document.getElementById("streakCount").innerText = streak;
-
     document.getElementById("status").innerText = "❌ " + tryAgain;
+
+    wrongBuzzer();
     speak(tryAgain);
   }
 }
 
+/* Start with default level hidden behaviour:
+   The selector is visible until user chooses a level (or changes it).
+   If you want it to start immediately on 0–9999, uncomment the next line.
+*/
+// startGame();
 pickNew();
 </script>
 
