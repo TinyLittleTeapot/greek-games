@@ -52,58 +52,160 @@
       font-size: 18px;
       font-weight: 800;
     }
+    .scoreRow {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      font-size: 16px;
+      opacity: 0.95;
+    }
+    .pill {
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      font-weight: 800;
+    }
+    .flag {
+      position: fixed;
+      right: 12px;
+      bottom: 12px;
+      font-size: 26px;
+      opacity: 0.95;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
 
-<h1>Greek Numbers 1–20</h1>
+<h1>Greek Numbers 0 έως 9999</h1>
 <div id="num">–</div>
-<div class="hint">Tap the correct Greek</div>
-<button class="topBtn" onclick="sayNumber()">🔊 Hear the answer</button>
+<div class="hint">Πάτα το σωστό στα Ελληνικά</div>
+
+<button class="topBtn" onclick="sayAnswer()">🔊 Άκουσε την απάντηση</button>
 
 <div id="choices"></div>
 <div id="status"></div>
 
+<div class="scoreRow">
+  <div class="pill">Σωστά: <span id="correctCount">0</span></div>
+  <div class="pill">Σειρά: <span id="streakCount">0</span></div>
+</div>
+
+<div class="flag">🇬🇷</div>
+
 <script>
-const greek = {
-  1:"ένα",2:"δύο",3:"τρία",4:"τέσσερα",5:"πέντε",
-  6:"έξι",7:"επτά",8:"οκτώ",9:"εννέα",10:"δέκα",
-  11:"έντεκα",12:"δώδεκα",13:"δεκατρία",14:"δεκατέσσερα",
-  15:"δεκαπέντε",16:"δεκαέξι",17:"δεκαεπτά",
-  18:"δεκαοκτώ",19:"δεκαεννέα",20:"είκοσι"
-};
-
-let current = 1;
-let greekVoice = null;
-
 const praise = ["Μπράβο", "Τέλεια", "Σωστό", "Πολύ καλά"];
 const tryAgain = "Δοκίμασε ξανά";
 
-function pickNew() {
-  current = Math.floor(Math.random() * 20) + 1;
-  document.getElementById("num").innerText = current;
-  document.getElementById("status").innerText = "";
-  renderChoices();
+let current = 0;
+let correctTotal = 0;
+let streak = 0;
+
+let greekVoice = null;
+
+const units = {
+  0: "μηδέν",
+  1: "ένα",
+  2: "δύο",
+  3: "τρία",
+  4: "τέσσερα",
+  5: "πέντε",
+  6: "έξι",
+  7: "επτά",
+  8: "οκτώ",
+  9: "εννέα"
+};
+
+const teens = {
+  10: "δέκα",
+  11: "έντεκα",
+  12: "δώδεκα",
+  13: "δεκατρία",
+  14: "δεκατέσσερα",
+  15: "δεκαπέντε",
+  16: "δεκαέξι",
+  17: "δεκαεπτά",
+  18: "δεκαοκτώ",
+  19: "δεκαεννέα"
+};
+
+const tens = {
+  20: "είκοσι",
+  30: "τριάντα",
+  40: "σαράντα",
+  50: "πενήντα",
+  60: "εξήντα",
+  70: "εβδομήντα",
+  80: "ογδόντα",
+  90: "ενενήντα"
+};
+
+const hundreds = {
+  2: "διακόσια",
+  3: "τριακόσια",
+  4: "τετρακόσια",
+  5: "πεντακόσια",
+  6: "εξακόσια",
+  7: "επτακόσια",
+  8: "οκτακόσια",
+  9: "εννιακόσια"
+};
+
+function under100(n) {
+  if (n < 10) return units[n];
+  if (n < 20) return teens[n];
+  if (n % 10 === 0) return tens[n];
+  const t = Math.floor(n / 10) * 10;
+  const r = n % 10;
+  return tens[t] + " " + units[r];
 }
 
-function renderChoices() {
-  const box = document.getElementById("choices");
-  box.innerHTML = "";
+function under1000(n) {
+  if (n < 100) return under100(n);
 
-  let options = [greek[current]];
-  while (options.length < 3) {
-    const r = greek[Math.floor(Math.random() * 20) + 1];
-    if (!options.includes(r)) options.push(r);
+  const h = Math.floor(n / 100);
+  const r = n % 100;
+
+  if (h === 1) {
+    if (r === 0) return "εκατό";
+    return "εκατόν " + under100(r);
   }
-  options.sort(() => Math.random() - 0.5);
 
-  options.forEach(text => {
-    const b = document.createElement("button");
-    b.className = "choice";
-    b.innerText = text;
-    b.onclick = () => handleChoice(b, text);
-    box.appendChild(b);
-  });
+  const hWord = hundreds[h];
+  if (r === 0) return hWord;
+  return hWord + " " + under100(r);
+}
+
+function thousandsPrefix(t) {
+  if (t === 2) return "δύο";
+  if (t === 3) return "τρεις";
+  if (t === 4) return "τέσσερις";
+  if (t === 5) return "πέντε";
+  if (t === 6) return "έξι";
+  if (t === 7) return "επτά";
+  if (t === 8) return "οκτώ";
+  if (t === 9) return "εννέα";
+  return "";
+}
+
+function numberToGreek(n) {
+  if (n === 0) return units[0];
+  if (n < 1000) return under1000(n);
+
+  const t = Math.floor(n / 1000);
+  const r = n % 1000;
+
+  let left = "";
+  if (t === 1) {
+    left = "χίλια";
+  } else {
+    left = thousandsPrefix(t) + " χιλιάδες";
+  }
+
+  if (r === 0) return left;
+  return left + " " + under1000(r);
 }
 
 function loadGreekVoice() {
@@ -126,28 +228,67 @@ function speak(text) {
   speechSynthesis.speak(u);
 }
 
-function sayNumber() {
-  speak(greek[current]);
+function sayAnswer() {
+  speak(numberToGreek(current));
+}
+
+function renderChoices() {
+  const box = document.getElementById("choices");
+  box.innerHTML = "";
+
+  const correct = numberToGreek(current);
+
+  let options = [correct];
+  while (options.length < 3) {
+    const rNum = Math.floor(Math.random() * 10000);
+    const rText = numberToGreek(rNum);
+    if (!options.includes(rText)) options.push(rText);
+  }
+
+  options.sort(() => Math.random() - 0.5);
+
+  options.forEach(text => {
+    const b = document.createElement("button");
+    b.className = "choice";
+    b.innerText = text;
+    b.onclick = () => handleChoice(b, text);
+    box.appendChild(b);
+  });
+}
+
+function pickNew() {
+  current = Math.floor(Math.random() * 10000);
+  document.getElementById("num").innerText = current;
+  document.getElementById("status").innerText = "";
+  renderChoices();
 }
 
 function handleChoice(btn, chosen) {
-  const correct = greek[current];
+  const correct = numberToGreek(current);
 
   if (chosen === correct) {
     btn.classList.add("good");
-    document.getElementById("status").innerText = "✅ " + (praise[Math.floor(Math.random()*praise.length)]);
-    // Speak the correct answer, then praise
-    speak(correct);
-    setTimeout(() => speak(praise[Math.floor(Math.random()*praise.length)]), 900);
 
-    // lock buttons, move to next after a moment
+    correctTotal += 1;
+    streak += 1;
+    document.getElementById("correctCount").innerText = correctTotal;
+    document.getElementById("streakCount").innerText = streak;
+
+    const msg = praise[Math.floor(Math.random() * praise.length)];
+    document.getElementById("status").innerText = "✅ " + msg;
+
+    speak(correct);
+    setTimeout(() => speak(msg), 900);
+
     document.querySelectorAll("button.choice").forEach(b => b.disabled = true);
     setTimeout(pickNew, 1400);
   } else {
     btn.classList.add("bad");
+    streak = 0;
+    document.getElementById("streakCount").innerText = streak;
+
     document.getElementById("status").innerText = "❌ " + tryAgain;
     speak(tryAgain);
-    // Do not move on. Keep trying.
   }
 }
 
