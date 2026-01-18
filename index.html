@@ -13,18 +13,44 @@
       text-align: center;
       padding: 16px;
     }
-    h1 { font-size: 20px; }
-    #num { font-size: 56px; font-weight: 900; margin: 20px 0; }
-    button {
+    h1 { font-size: 20px; margin: 10px 0 4px; }
+    #num { font-size: 56px; font-weight: 900; margin: 18px 0 10px; }
+    .hint { opacity: 0.85; margin-bottom: 12px; }
+    #choices { display: grid; gap: 12px; margin-top: 12px; }
+    button.choice {
       width: 100%;
       padding: 16px;
-      margin: 10px 0;
       font-size: 22px;
       border-radius: 14px;
       border: 1px solid rgba(255,255,255,0.2);
       background: #121c33;
       color: #e8eefc;
-      font-weight: 700;
+      font-weight: 800;
+    }
+    button.choice.good {
+      background: rgba(96,255,165,0.18);
+      border-color: rgba(96,255,165,0.55);
+    }
+    button.choice.bad {
+      background: rgba(255,96,96,0.18);
+      border-color: rgba(255,96,96,0.55);
+    }
+    .topBtn {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.06);
+      color: #e8eefc;
+      font-weight: 800;
+      margin-top: 10px;
+    }
+    #status {
+      margin-top: 12px;
+      min-height: 22px;
+      font-size: 18px;
+      font-weight: 800;
     }
   </style>
 </head>
@@ -32,15 +58,11 @@
 
 <h1>Greek Numbers 1–20</h1>
 <div id="num">–</div>
-<button onclick="speak()">🔊 Hear it</button>
-
-<div style="display:flex; gap:8px; margin-top:8px;">
-  <button onclick="setSpeed(0.75)">🐢 Slow</button>
-  <button onclick="setSpeed(0.9)">▶️ Normal</button>
-  <button onclick="setSpeed(1.05)">🚀 Fast</button>
-</div>
+<div class="hint">Tap the correct Greek</div>
+<button class="topBtn" onclick="sayNumber()">🔊 Hear the answer</button>
 
 <div id="choices"></div>
+<div id="status"></div>
 
 <script>
 const greek = {
@@ -54,10 +76,17 @@ const greek = {
 let current = 1;
 let greekVoice = null;
 
+const praise = ["Μπράβο", "Τέλεια", "Σωστό", "Πολύ καλά"];
+const tryAgain = "Δοκίμασε ξανά";
 
-function next() {
+function pickNew() {
   current = Math.floor(Math.random() * 20) + 1;
   document.getElementById("num").innerText = current;
+  document.getElementById("status").innerText = "";
+  renderChoices();
+}
+
+function renderChoices() {
   const box = document.getElementById("choices");
   box.innerHTML = "";
 
@@ -66,55 +95,63 @@ function next() {
     const r = greek[Math.floor(Math.random() * 20) + 1];
     if (!options.includes(r)) options.push(r);
   }
-
   options.sort(() => Math.random() - 0.5);
 
-  options.forEach(o => {
+  options.forEach(text => {
     const b = document.createElement("button");
-    b.innerText = o;
-    b.onclick = () => setTimeout(next, 500);
+    b.className = "choice";
+    b.innerText = text;
+    b.onclick = () => handleChoice(b, text);
     box.appendChild(b);
   });
 }
 
-let speechRate = 0.9; // default = normal
-
-
-
 function loadGreekVoice() {
   const voices = speechSynthesis.getVoices();
-
   greekVoice =
-    voices.find(v => v.lang === "el-GR") ||
-    voices.find(v => v.lang && v.lang.startsWith("el")) ||
+    voices.find(v => (v.lang || "").toLowerCase() === "el-gr") ||
+    voices.find(v => (v.lang || "").toLowerCase().startsWith("el")) ||
     null;
 }
-
-// iOS loads voices asynchronously
 speechSynthesis.onvoiceschanged = loadGreekVoice;
 loadGreekVoice();
 
-function speak() {
-  const utterance = new SpeechSynthesisUtterance(greek[current]);
+function speak(text) {
+  const u = new SpeechSynthesisUtterance(text);
+  if (greekVoice) u.voice = greekVoice;
+  u.lang = "el-GR";
+  u.rate = 0.9;
+  u.pitch = 1.0;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
 
-  if (greekVoice) {
-    utterance.voice = greekVoice;
+function sayNumber() {
+  speak(greek[current]);
+}
+
+function handleChoice(btn, chosen) {
+  const correct = greek[current];
+
+  if (chosen === correct) {
+    btn.classList.add("good");
+    document.getElementById("status").innerText = "✅ " + (praise[Math.floor(Math.random()*praise.length)]);
+    // Speak the correct answer, then praise
+    speak(correct);
+    setTimeout(() => speak(praise[Math.floor(Math.random()*praise.length)]), 900);
+
+    // lock buttons, move to next after a moment
+    document.querySelectorAll("button.choice").forEach(b => b.disabled = true);
+    setTimeout(pickNew, 1400);
+  } else {
+    btn.classList.add("bad");
+    document.getElementById("status").innerText = "❌ " + tryAgain;
+    speak(tryAgain);
+    // Do not move on. Keep trying.
   }
-
-  utterance.lang = "el-GR";
-  utterance.rate = speechRate;   // slightly slower, more Greek
-  utterance.pitch = 1.0; // natural pitch
-
-  speechSynthesis.cancel(); // stop overlapping speech
-  speechSynthesis.speak(utterance);
 }
 
-function setSpeed(rate) {
-  speechRate = rate;
-}
-
-
-next();
+pickNew();
 </script>
 
 </body>
