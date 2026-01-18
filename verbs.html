@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Greek Verbs – Είμαι</title>
+  <style>
+    body{
+      margin:0;
+      font-family:-apple-system,system-ui;
+      background:#0b1220;
+      color:#e8eefc;
+      text-align:center;
+      padding:16px;
+    }
+    h1{font-size:20px;margin:10px 0 4px;}
+    .card{
+      max-width:900px;
+      margin:0 auto;
+    }
+    .prompt{
+      margin:16px 0 12px;
+      padding:16px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);
+      font-size:22px;
+      font-weight:900;
+      line-height:1.2;
+    }
+    .blank{
+      color:#ffd466;
+      font-weight:900;
+    }
+    .hint{opacity:0.85;margin:8px 0 12px;}
+    input{
+      width:100%;
+      padding:14px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.2);
+      background:#121c33;
+      color:#e8eefc;
+      font-size:20px;
+      font-weight:800;
+      outline:none;
+    }
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+    .btn{
+      width:100%;
+      padding:14px;
+      font-size:18px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.2);
+      background:rgba(255,255,255,0.06);
+      color:#e8eefc;
+      font-weight:900;
+    }
+    #status{
+      margin-top:12px;
+      min-height:22px;
+      font-size:18px;
+      font-weight:900;
+    }
+    .good{color:rgba(96,255,165,0.95);}
+    .bad{color:rgba(255,96,96,0.95);}
+    .meta{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      font-size:16px;
+      opacity:0.95;
+    }
+    .pill{
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);
+      font-weight:900;
+    }
+    .flag{
+      position:fixed;right:12px;bottom:12px;
+      font-size:26px;opacity:0.95;user-select:none;
+    }
+    .small{opacity:0.8;font-size:14px;margin-top:6px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Greek Verbs – Είμαι (typing)</h1>
+
+    <div class="prompt" id="prompt"></div>
+    <div class="hint">Type the missing form of <b>είμαι</b> using your Greek keyboard.</div>
+
+    <input id="answer" placeholder="Type here (π.χ. είμαι, είσαι, είναι…)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+
+    <div class="row">
+      <button class="btn" id="checkBtn">✅ Check</button>
+      <button class="btn" id="hearBtn">🔊 Hear sentence</button>
+    </div>
+
+    <div id="status"></div>
+
+    <div class="meta">
+      <div class="pill">Σωστά: <span id="correctCount">0</span></div>
+      <div class="pill">Σειρά: <span id="streakCount">0</span></div>
+    </div>
+
+    <div class="small">Tip: accents matter less here. Focus on picking the right form.</div>
+  </div>
+
+  <div class="flag">🇬🇷</div>
+
+<script>
+/* ---------------- Voice ---------------- */
+let greekVoice = null;
+function loadGreekVoice(){
+  const voices = speechSynthesis.getVoices();
+  greekVoice =
+    voices.find(v => (v.lang||"").toLowerCase()==="el-gr") ||
+    voices.find(v => (v.lang||"").toLowerCase().startsWith("el")) ||
+    null;
+}
+speechSynthesis.onvoiceschanged = loadGreekVoice;
+loadGreekVoice();
+
+function speak(text){
+  const u = new SpeechSynthesisUtterance(text);
+  if(greekVoice) u.voice = greekVoice;
+  u.lang = "el-GR";
+  u.rate = 0.9;
+  u.pitch = 1.0;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+function waitForSpeechEnd(text){
+  return new Promise(resolve=>{
+    const u = new SpeechSynthesisUtterance(text);
+    if(greekVoice) u.voice = greekVoice;
+    u.lang = "el-GR";
+    u.rate = 0.9;
+    u.pitch = 1.0;
+    u.onend = resolve;
+    u.onerror = resolve;
+    speechSynthesis.speak(u);
+  });
+}
+
+/* ---------------- Helpers ---------------- */
+function norm(s){
+  return (s||"")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,""); // strip accents
+}
+
+/* ---------------- Game data ----------------
+   Each item: sentence with ___ blank, expected answer, full correct sentence */
+const items = [
+  { s:"Εγώ ___ η Μέγκαν.", a:"είμαι", full:"Εγώ είμαι η Μέγκαν." },
+  { s:"Εσύ ___ από την Κύπρο;", a:"είσαι", full:"Εσύ είσαι από την Κύπρο;" },
+  { s:"Αυτό ___ καφές.", a:"είναι", full:"Αυτό είναι καφές." },
+  { s:"Εμείς ___ στο σπίτι.", a:"είμαστε", full:"Εμείς είμαστε στο σπίτι." },
+  { s:"Εσείς ___ έτοιμοι;", a:"είστε", full:"Εσείς είστε έτοιμοι;" },
+  { s:"Αυτοί ___ φίλοι μου.", a:"είναι", full:"Αυτοί είναι φίλοι μου." },
+
+  { s:"Σήμερα ___ καλά.", a:"είμαι", full:"Σήμερα είμαι καλά." },
+  { s:"Πού ___ τώρα;", a:"είσαι", full:"Πού είσαι τώρα;" },
+  { s:"Το μαγαζί ___ ανοιχτό.", a:"είναι", full:"Το μαγαζί είναι ανοιχτό." },
+  { s:"Εμείς ___ κουρασμένοι.", a:"είμαστε", full:"Εμείς είμαστε κουρασμένοι." },
+  { s:"Εσείς ___ εδώ;", a:"είστε", full:"Εσείς είστε εδώ;" },
+  { s:"Τα παιδιά ___ στο σχολείο.", a:"είναι", full:"Τα παιδιά είναι στο σχολείο." },
+
+  { s:"Το όνομά μου ___ Μέγκαν.", a:"είναι", full:"Το όνομά μου είναι Μέγκαν." },
+  { s:"Εγώ ___ από την Αγγλία.", a:"είμαι", full:"Εγώ είμαι από την Αγγλία." },
+  { s:"Εσύ ___ πολύ ευγενικός.", a:"είσαι", full:"Εσύ είσαι πολύ ευγενικός." },
+  { s:"Εμείς ___ στην Αθήνα.", a:"είμαστε", full:"Εμείς είμαστε στην Αθήνα." },
+  { s:"Εσείς ___ στο σωστό μέρος.", a:"είστε", full:"Εσείς είστε στο σωστό μέρος." },
+  { s:"Αυτές ___ καλές ιδέες.", a:"είναι", full:"Αυτές είναι καλές ιδέες." }
+];
+
+let currentItem = null;
+let correct = 0;
+let streak = 0;
+let locked = false;
+
+const promptEl = document.getElementById("prompt");
+const answerEl = document.getElementById("answer");
+const statusEl = document.getElementById("status");
+const correctEl = document.getElementById("correctCount");
+const streakEl = document.getElementById("streakCount");
+
+const praise = ["Μπράβο", "Τέλεια", "Σωστό", "Πολύ καλά"];
+const tryAgain = "Δοκίμασε ξανά";
+
+function pick(){
+  locked = false;
+  currentItem = items[Math.floor(Math.random()*items.length)];
+  promptEl.innerHTML = currentItem.s.replace("___", "<span class='blank'>___</span>");
+  statusEl.className = "";
+  statusEl.textContent = "";
+  answerEl.value = "";
+  answerEl.focus();
+}
+
+async function check(){
+  if(locked) return;
+  const typed = norm(answerEl.value);
+  const expected = norm(currentItem.a);
+
+  if(typed === expected){
+    locked = true;
+    correct += 1;
+    streak += 1;
+    correctEl.textContent = String(correct);
+    streakEl.textContent = String(streak);
+
+    const msg = praise[Math.floor(Math.random()*praise.length)];
+    statusEl.className = "good";
+    statusEl.textContent = "✅ " + msg;
+
+    // Speak the full sentence, then praise
+    speechSynthesis.cancel();
+    await waitForSpeechEnd(currentItem.full);
+    await waitForSpeechEnd(msg);
+
+    setTimeout(pick, 200);
+  } else {
+    streak = 0;
+    streakEl.textContent = String(streak);
+    statusEl.className = "bad";
+    statusEl.textContent = "❌ " + tryAgain;
+    speak(tryAgain);
+  }
+}
+
+function hearSentence(){
+  speak(currentItem.full);
+}
+
+document.getElementById("checkBtn").onclick = check;
+document.getElementById("hearBtn").onclick = hearSentence;
+
+// Submit with Enter on iPhone external keyboards too
+answerEl.addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") check();
+});
+
+pick();
+</script>
+</body>
+</html>
