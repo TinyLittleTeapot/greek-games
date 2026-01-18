@@ -68,10 +68,34 @@ function next() {
   });
 }
 
+let greekVoice = null;
+
+function loadGreekVoice() {
+  const voices = speechSynthesis.getVoices();
+
+  greekVoice =
+    voices.find(v => v.lang === "el-GR") ||
+    voices.find(v => v.lang && v.lang.startsWith("el")) ||
+    null;
+}
+
+// iOS loads voices asynchronously
+speechSynthesis.onvoiceschanged = loadGreekVoice;
+loadGreekVoice();
+
 function speak() {
-  speechSynthesis.speak(
-    new SpeechSynthesisUtterance(greek[current])
-  );
+  const utterance = new SpeechSynthesisUtterance(greek[current]);
+
+  if (greekVoice) {
+    utterance.voice = greekVoice;
+  }
+
+  utterance.lang = "el-GR";
+  utterance.rate = 0.9;   // slightly slower, more Greek
+  utterance.pitch = 1.0; // natural pitch
+
+  speechSynthesis.cancel(); // stop overlapping speech
+  speechSynthesis.speak(utterance);
 }
 
 next();
