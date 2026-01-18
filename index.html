@@ -33,6 +33,13 @@
 <h1>Greek Numbers 1–20</h1>
 <div id="num">–</div>
 <button onclick="speak()">🔊 Hear it</button>
+
+<div style="display:flex; gap:8px; margin-top:8px;">
+  <button onclick="setSpeed(0.75)">🐢 Slow</button>
+  <button onclick="setSpeed(0.9)">▶️ Normal</button>
+  <button onclick="setSpeed(1.05)">🚀 Fast</button>
+</div>
+
 <div id="choices"></div>
 
 <script>
@@ -68,7 +75,9 @@ function next() {
   });
 }
 
-let greekVoice = null;
+let speechRate = 0.9; // default = normal
+
+
 
 function loadGreekVoice() {
   const voices = speechSynthesis.getVoices();
@@ -91,12 +100,17 @@ function speak() {
   }
 
   utterance.lang = "el-GR";
-  utterance.rate = 0.9;   // slightly slower, more Greek
+  utterance.rate = speechRate;   // slightly slower, more Greek
   utterance.pitch = 1.0; // natural pitch
 
   speechSynthesis.cancel(); // stop overlapping speech
   speechSynthesis.speak(utterance);
 }
+
+function setSpeed(rate) {
+  speechRate = rate;
+}
+
 
 next();
 </script>
