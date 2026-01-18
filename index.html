@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Greek Numbers</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, system-ui;
+      background: #0b1220;
+      color: #e8eefc;
+      text-align: center;
+      padding: 16px;
+    }
+    h1 { font-size: 20px; }
+    #num { font-size: 56px; font-weight: 900; margin: 20px 0; }
+    button {
+      width: 100%;
+      padding: 16px;
+      margin: 10px 0;
+      font-size: 22px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: #121c33;
+      color: #e8eefc;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Greek Numbers 1–20</h1>
+<div id="num">–</div>
+<button onclick="speak()">🔊 Hear it</button>
+<div id="choices"></div>
+
+<script>
+const greek = {
+  1:"ένα",2:"δύο",3:"τρία",4:"τέσσερα",5:"πέντε",
+  6:"έξι",7:"επτά",8:"οκτώ",9:"εννέα",10:"δέκα",
+  11:"έντεκα",12:"δώδεκα",13:"δεκατρία",14:"δεκατέσσερα",
+  15:"δεκαπέντε",16:"δεκαέξι",17:"δεκαεπτά",
+  18:"δεκαοκτώ",19:"δεκαεννέα",20:"είκοσι"
+};
+
+let current = 1;
+
+function next() {
+  current = Math.floor(Math.random() * 20) + 1;
+  document.getElementById("num").innerText = current;
+  const box = document.getElementById("choices");
+  box.innerHTML = "";
+
+  let options = [greek[current]];
+  while (options.length < 3) {
+    const r = greek[Math.floor(Math.random() * 20) + 1];
+    if (!options.includes(r)) options.push(r);
+  }
+
+  options.sort(() => Math.random() - 0.5);
+
+  options.forEach(o => {
+    const b = document.createElement("button");
+    b.innerText = o;
+    b.onclick = () => setTimeout(next, 500);
+    box.appendChild(b);
+  });
+}
+
+function speak() {
+  speechSynthesis.speak(
+    new SpeechSynthesisUtterance(greek[current])
+  );
+}
+
+next();
+</script>
+
+</body>
+</html>
